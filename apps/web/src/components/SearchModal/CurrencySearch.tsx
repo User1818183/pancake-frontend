@@ -33,6 +33,7 @@ interface CurrencySearchProps {
   setImportToken: (token: Token) => void
   height?: number
   tokensToShow?: Token[]
+  showChainLogo?: boolean
 }
 
 function useSearchInactiveTokenLists(search: string | undefined, minResults = 10): WrappedTokenInfo[] {
@@ -89,6 +90,7 @@ function CurrencySearch({
   setImportToken,
   height,
   tokensToShow,
+  showChainLogo,
 }: CurrencySearchProps) {
   const { t } = useTranslation()
   const { chainId } = useActiveChainId()
@@ -209,6 +211,7 @@ function CurrencySearch({
           fixedListRef={fixedList}
           showImportView={showImportView}
           setImportToken={setImportToken}
+          showChainLogo={showChainLogo}
         />
       </Box>
     ) : (
@@ -234,6 +237,7 @@ function CurrencySearch({
     showCommonBases,
     isMobile,
     height,
+    showChainLogo,
   ])
 
   return (

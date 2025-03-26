@@ -62,12 +62,14 @@ function CurrencyRow({
   isSelected,
   otherSelected,
   style,
+  showChainLogo,
 }: {
   currency: Currency
   onSelect: () => void
   isSelected: boolean
   otherSelected: boolean
   style: CSSProperties
+  showChainLogo?: boolean
 }) {
   const { address: account } = useAccount()
   const { t } = useTranslation()
@@ -87,7 +89,7 @@ function CurrencyRow({
       disabled={isSelected}
       selected={otherSelected}
     >
-      <CurrencyLogo currency={currency} size="28px" />
+      <CurrencyLogo showChainLogo={showChainLogo} currency={currency} size="40px" />
 
       <Column>
         <Text bold>{currency?.symbol}</Text>
@@ -114,6 +116,7 @@ export default function CurrencyList({
   showImportView,
   setImportToken,
   breakIndex,
+  showChainLogo,
 }: {
   height: number | string
   currencies: Currency[]
@@ -126,6 +129,7 @@ export default function CurrencyList({
   showImportView: () => void
   setImportToken: (token: Token) => void
   breakIndex: number | undefined
+  showChainLogo?: boolean
 }) {
   const native = useNativeCurrency()
 
@@ -191,6 +195,7 @@ export default function CurrencyList({
           isSelected={isSelected}
           onSelect={handleSelect}
           otherSelected={otherSelected}
+          showChainLogo={showChainLogo}
         />
       )
     },
@@ -204,6 +209,7 @@ export default function CurrencyList({
       t,
       showImportView,
       setImportToken,
+      showChainLogo,
     ],
   )
 

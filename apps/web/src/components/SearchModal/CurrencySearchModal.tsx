@@ -69,6 +69,7 @@ export interface CurrencySearchModalProps extends InjectedModalProps {
   showSearchInput?: boolean
   tokensToShow?: Token[]
   showCurrencyInHeader?: boolean
+  showChainLogo?: boolean
 }
 
 export default function CurrencySearchModal({
@@ -81,6 +82,7 @@ export default function CurrencySearchModal({
   showSearchInput,
   tokensToShow,
   showCurrencyInHeader = false,
+  showChainLogo,
 }: CurrencySearchModalProps) {
   const [modalView, setModalView] = useState<CurrencyModalView>(CurrencyModalView.search)
 
@@ -166,12 +168,17 @@ export default function CurrencySearchModal({
 
           {showCurrencyInHeader && selectedCurrency ? (
             <>
-              <CurrencyLogo currency={selectedCurrency} style={{ borderRadius: '50%' }} />
-              <Text p="2px 6px" bold>
+              <CurrencyLogo
+                size="32px"
+                showChainLogo={showChainLogo}
+                currency={selectedCurrency}
+                style={{ borderRadius: '50%' }}
+              />
+              <Text px="8px" bold fontSize="20px">
                 {selectedCurrency.symbol}
               </Text>
               {!selectedCurrency.isNative && (
-                <FlexGap ml={isMobile ? '8px' : '4px'} alignItems="center">
+                <FlexGap gap="8px" alignItems="center">
                   <CopyButton
                     data-dd-action-name="Copy token address"
                     width="16px"
@@ -187,14 +194,12 @@ export default function CurrencySearchModal({
                     type="token"
                     color="textSubtle"
                     width="18px"
-                    ml={isMobile ? '18px' : '12px'}
                     tooltipPlacement="top"
                   />
                   <AddToWalletButton
                     data-dd-action-name="Add to wallet"
                     variant="text"
                     p="0"
-                    ml={isMobile ? '21px' : '15px'}
                     height="auto"
                     width="fit-content"
                     tokenAddress={selectedCurrency.wrapped.address}
@@ -229,6 +234,7 @@ export default function CurrencySearchModal({
             setImportToken={setImportToken}
             height={height}
             tokensToShow={tokensToShow}
+            showChainLogo={showChainLogo}
           />
         ) : modalView === CurrencyModalView.importToken && importToken ? (
           <ImportToken tokens={[importToken]} handleCurrencySelect={handleCurrencySelect} />
