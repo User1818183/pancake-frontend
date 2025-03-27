@@ -335,12 +335,11 @@ const CurrencyInputPanelSimplify = memo(function CurrencyInputPanel({
                     <FiatLogo currency={currency} size={`${LOGO_SIZE.MAX}px`} style={{ marginRight: '8px' }} />
                   ) : (
                     <CurrencyLogo
+                      showChainLogo
                       imageRef={tokenImageRef}
                       currency={currency}
                       size={`${LOGO_SIZE.MAX}px`}
-                      style={{
-                        marginRight: '8px',
-                      }}
+                      containerStyle={{ marginRight: '8px' }}
                     />
                   )
                 ) : currencyLoading ? (

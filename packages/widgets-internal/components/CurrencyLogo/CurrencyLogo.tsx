@@ -49,6 +49,7 @@ export function CurrencyLogo({
   useTrustWalletUrl,
   imageRef,
   showChainLogo = false,
+  containerStyle,
   ...props
 }: {
   currency?: CurrencyInfo & {
@@ -59,6 +60,7 @@ export function CurrencyLogo({
   useTrustWalletUrl?: boolean;
   showChainLogo?: boolean;
   imageRef?: React.RefObject<HTMLImageElement>;
+  containerStyle?: React.CSSProperties;
 } & SpaceProps) {
   const uriLocations = useHttpLocations(currency?.logoURI);
   const sizeInNumber = parseInt(size);
@@ -107,7 +109,7 @@ export function CurrencyLogo({
   };
 
   return (
-    <LogoContainer>
+    <LogoContainer style={containerStyle}>
       {renderLogo()}
       {showChainLogo && currency?.chainId && (
         <StyledChainLogo
