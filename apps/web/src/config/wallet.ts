@@ -10,7 +10,7 @@ import safeGetWindow from '@pancakeswap/utils/safeGetWindow'
 import { ASSET_CDN } from './constants/endpoints'
 
 export enum ConnectorNames {
-  MetaMask = 'metaMask',
+  MetaMask = 'metaMaskSDK',
   Injected = 'injected',
   WalletConnect = 'walletConnect',
   WalletConnectV1 = 'walletConnectLegacy',
@@ -18,6 +18,7 @@ export enum ConnectorNames {
   BinanceW3W = 'BinanceW3WSDK',
   Blocto = 'blocto',
   WalletLink = 'coinbaseWalletSDK',
+  Phantom = 'phantom',
   // Ledger = 'ledger',
   TrustWallet = 'trust',
   CyberWallet = 'cyberWallet',
@@ -152,6 +153,12 @@ const walletsConfig = <config extends Config = Config, context = unknown>({
       title: 'Coinbase Wallet',
       icon: `${ASSET_CDN}/web/wallets/coinbase.png`,
       connectorId: ConnectorNames.WalletLink,
+    },
+    {
+      id: 'phantom',
+      title: 'Phantom Wallet',
+      icon: `${ASSET_CDN}/web/wallets/phantom.png`,
+      connectorId: ConnectorNames.Phantom,
     },
     {
       id: 'walletconnect',
