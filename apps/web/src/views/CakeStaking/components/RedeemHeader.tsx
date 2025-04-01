@@ -86,6 +86,7 @@ const AnnouncementLinkMobile = styled(Link)`
   font-size: 16px;
   line-height: 150%;
   letter-spacing: 0%;
+  color: ${({ theme }) => theme.colors.primary60};
 `
 
 const AnnouncementLink = styled(Link)`
@@ -97,16 +98,16 @@ const AnnouncementLink = styled(Link)`
   line-height: 120%;
   letter-spacing: 3%;
   vertical-align: middle;
+  color: ${({ theme }) => theme.colors.primary60};
 `
 
 const LinkText = styled.span`
-  color: ${({ theme }) => theme.colors.primary};
   font-family: Kanit;
 `
 
 const StyledArrowForwardIcon = styled(ArrowForwardIcon)`
   margin-left: 4px;
-  color: ${({ theme }) => theme.colors.primary};
+  fill: ${({ theme }) => theme.colors.primary60};
 `
 
 const ImageWrapper = styled.div`

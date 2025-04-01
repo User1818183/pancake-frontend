@@ -1,13 +1,14 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Box, Button, ChevronUpIcon, IconButton, Text } from '@pancakeswap/uikit'
+import { Box, Button, ChevronDownIcon, Flex, Link, Text } from '@pancakeswap/uikit'
 import BigNumber from 'bignumber.js'
 import ConnectWalletButton from 'components/ConnectWalletButton'
+import { ASSET_CDN } from 'config/constants/endpoints'
 import { WEEK } from 'config/constants/veCake'
 import dayjs from 'dayjs'
 import useAccountActiveChain from 'hooks/useAccountActiveChain'
 import { useCakePrice } from 'hooks/useCakePrice'
 import { useVeCakeBalance } from 'hooks/useTokenBalance'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { isMobile } from 'react-device-detect'
 import { useCurrentBlockTimestamp } from 'state/block/hooks'
 import styled from 'styled-components'
@@ -16,7 +17,7 @@ import { getRevenueSharingPoolGatewayContract } from 'utils/contractHelpers'
 import { formatTime } from 'utils/formatTime'
 import { poolStartWeekCursors } from 'views/CakeStaking/config'
 import { RedeemHeader } from './components/RedeemHeader'
-import { VeCakeExitField } from './components/VeCakeExitField'
+import { DisplayUSDValue, DisplayValue, VeCakeExitField } from './components/VeCakeExitField'
 import { createWriteContractCallback } from './hooks/useContractWrite/createWriteContractCallback'
 import { useWriteEarlyWithdrawCallback } from './hooks/useContractWrite/useWriteEarlyWithdrawCallback'
 import { useRevenueSharingCakePool, useRevenueSharingVeCake } from './hooks/useRevenueSharingProxy'
@@ -92,6 +93,7 @@ export const VeCakeRedeem: React.FC = () => {
     if (!account || !chainId || !currentBlockTimestamp) return
     if (userStaked) {
       await earlyWithdraw.callMethod(account, BigInt(lockedCake.toFixed(0)))
+      return
     }
 
     if (userHasRewards) {
@@ -108,6 +110,7 @@ export const VeCakeRedeem: React.FC = () => {
       await claimAll.callMethod(revenueSharingPools, account)
     }
   }, [earlyWithdraw, userStaked])
+  const [expand, setExpand] = useState(false)
 
   return (
     <Bg>
@@ -117,43 +120,102 @@ export const VeCakeRedeem: React.FC = () => {
           <SectionTitle isMobile={isMobile}>{t('MY CAKE STAKING POSITION')}</SectionTitle>
 
           <FieldGroup>
-            <VeCakeExitField label="My veCAKE" value={myVeCake} symbol="veCake" />
+            <VeCakeExitField
+              label="My veCAKE"
+              value={myVeCake}
+              valueTooltip={
+                <>
+                  {t(
+                    'veCAKE is calculated with number of CAKE locked, and the remaining time against maximum lock time.',
+                  )}
 
-            <VeCakeExitField label="My Locked CAKE" value={lockedCake} symbol="CAKE" />
+                  <LearnMore />
+                </>
+              }
+            />
+
+            <VeCakeExitField
+              label="My Locked CAKE"
+              value={lockedCake}
+              symbol="CAKE"
+              valueStyles={{
+                fontWeight: 600,
+                fontSize: '16px',
+                lineHeight: '120%',
+                textAlign: 'right',
+              }}
+              usdValue={lockedCake.times(cakePrice)}
+            />
 
             <VeCakeExitField
               label="Unlock Date"
               value={
                 <>
-                  <Text>{t('Anytime')}</Text>
-                  <Text>{endDate}</Text>
+                  <DateText
+                    style={{
+                      textDecoration: 'line-through',
+                      fontSize: '16px',
+                    }}
+                  >
+                    {endDate}
+                  </DateText>
+                  <Text style={{}}>{t('Anytime')}</Text>
                 </>
               }
             />
 
             <VeCakeExitField
               label="My Total rewards"
-              value={availableClaim}
+              value={
+                <Flex
+                  onClick={() => {
+                    setExpand(!expand)
+                  }}
+                  style={{
+                    cursor: 'pointer',
+                  }}
+                >
+                  <DisplayValue
+                    value={availableClaim}
+                    symbol="CAKE"
+                    style={{
+                      fontSize: '16px',
+                      fontWeight: 600,
+                    }}
+                  />
+                  <ChevronDownIcon color="primary60" />
+                </Flex>
+              }
               symbol="CAKE"
               usdValue={availableClaimUSD}
             />
 
-            <ArrowButton>
-              <ChevronUpIcon color="currentColor" />
-            </ArrowButton>
-
-            <SubField>
-              <VeCakeExitField label="CAKE Pool Rewards" value={cakePoolRewards} symbol="CAKE" />
-              <VeCakeExitField label="Revenue Sharing Rewards" value={veCakeRewards} symbol="CAKE" />
-            </SubField>
+            {expand && (
+              <>
+                <SubField>
+                  <VeCakeExitField label="CAKE Pool Rewards" value={cakePoolRewards} symbol="CAKE" />
+                  <VeCakeExitField label="Revenue Sharing Rewards" value={veCakeRewards} symbol="CAKE" />
+                </SubField>
+              </>
+            )}
           </FieldGroup>
 
-          <DividerLine />
-
-          <Box mb="16px" mt="8px">
-            <RedeemTitle>{t('REDEEM NOW')}</RedeemTitle>
-            <VeCakeExitField label="Total amount" value={totalAmount} symbol="CAKE" usdValue={totalAmountUSD} />
-          </Box>
+          <TotalRedeemBox>
+            <Box>
+              <RedeemIcon src={`${ASSET_CDN}/web/vecake/redeem-icon.png`} alt="redeem" />
+            </Box>
+            <Flex flex={1} flexDirection="row" justifyContent="space-between">
+              <Box>
+                <RedeemTitle>{t('REDEEM NOW')}</RedeemTitle>
+                <RedeemLabel>{t('Total amount')}</RedeemLabel>
+                {/* <VeCakeExitField label="Total amount" value={totalAmount} symbol="CAKE" usdValue={totalAmountUSD} /> */}
+              </Box>
+              <Box>
+                <StyledRedeemValue symbol="CAKE" value={totalAmount} />
+                <DisplayUSDValue value={totalAmountUSD} />
+              </Box>
+            </Flex>
+          </TotalRedeemBox>
 
           {isWalletConnected ? (
             <StyledButton fullWidth onClick={handleClick} disabled={isButtonDisabled}>
@@ -168,8 +230,56 @@ export const VeCakeRedeem: React.FC = () => {
   )
 }
 
+const RedeemLabel = styled(Text)`
+  font-family: Kanit;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 120%;
+  letter-spacing: 0px;
+  vertical-align: middle;
+  color: ${({ theme }) => theme.colors.textSubtle};
+`
+
+const StyledRedeemValue = styled(DisplayValue)`
+  font-family: Kanit;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 120%;
+  letter-spacing: 0px;
+  text-align: right;
+  color: ${({ theme }) => theme.colors.secondary};
+`
+
+const RedeemIcon = styled.img`
+  width: 46px;
+  height: 55px;
+  margin-right: 8px;
+`
+
+const TotalRedeemBox = styled(Box)`
+  margin-bottom: 16px;
+  margin-top: 8px;
+  background: ${({ theme }) => theme.colors.gradientBubblegum};
+  border: 1px solid ${({ theme }) => theme.colors.cardBorder};
+  border-radius: 16px;
+  padding-top: 8px;
+  padding-right: 16px;
+  padding-bottom: 8px;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+`
+
+const DateText = styled(Text)`
+  text-decoration: line-through;
+  fontsize: 16px;
+  color: ${({ theme }) => theme.colors.textDisabled};
+`
+
 const Bg = styled.div`
   background: ${({ theme }) => theme.colors.gradientBubblegum};
+  min-height: 100vh;
 `
 const Container = styled.div`
   margin: 0 auto;
@@ -209,31 +319,28 @@ const SubField = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.cardBorder};
 `
 
-const ArrowButton = styled(IconButton)`
-  align-self: center;
-  color: ${({ theme }) => theme.colors.textSubtle};
-  background: transparent;
-  box-shadow: none;
-
-  &:hover {
-    opacity: 0.7;
-  }
-`
-
-const DividerLine = styled.div`
-  margin: 16px 0;
-  height: 1px;
-  width: 100%;
-  background: ${({ theme }) => theme.colors.cardBorder};
-`
-
 const RedeemTitle = styled(Text)`
-  font-size: 14px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.primary};
-  margin-bottom: 4px;
+  color: ${({ theme }) => theme.colors.secondary};
+  font-family: Kanit;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 120%;
+  letter-spacing: 3%;
+  text-transform: uppercase;
 `
 
 const StyledButton = styled(Button)`
-  font-weight: 700;
+  font-weight: 600;
+  width: 100%;
 `
+
+const LearnMore: React.FC<{ href?: string }> = ({
+  href = 'https://docs.pancakeswap.finance/products/vecake/migrate-from-cake-pool#10ffc408-be58-4fa8-af56-be9f74d03f42',
+}) => {
+  const { t } = useTranslation()
+  return (
+    <Link href={href} color="text" external>
+      {t('Learn More >>')}
+    </Link>
+  )
+}

@@ -1,8 +1,8 @@
 import { ONE_WEEK_DEFAULT } from '@pancakeswap/pools'
 import { useQuery } from '@tanstack/react-query'
 import BigNumber from 'bignumber.js'
-import { publicClient } from 'utils/wagmi'
 import { WEEK } from 'config/constants/veCake'
+import { publicClient } from 'utils/wagmi'
 import { useAccount } from 'wagmi'
 import {
   useRevenueSharingCakePoolContract,
@@ -74,7 +74,7 @@ export const useRevenueSharingProxy = (
           availableClaim: claimResult.result.toString(),
         }
       } catch (error) {
-        console.error('[ERROR] Fetching Revenue Sharing Pool', error)
+        console.warn('[ERROR] Fetching Revenue Sharing Pool', error)
         throw error
       }
     },

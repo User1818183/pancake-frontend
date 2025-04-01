@@ -1,5 +1,5 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Flex, Text, TooltipText } from '@pancakeswap/uikit'
+import { Flex, Text, TooltipText, useTooltip } from '@pancakeswap/uikit'
 import { getBalanceAmount } from '@pancakeswap/utils/formatBalance'
 import BigNumber from 'bignumber.js'
 import React, { ReactElement } from 'react'
@@ -10,22 +10,28 @@ type FieldProps = {
   label: string
   labelTooltip?: string
   value: ReactElement | number | BigNumber
+  valueStyles?: React.CSSProperties
+  valueTooltip?: string | ReactElement
   symbol?: string
   usdValue?: number | BigNumber
 }
 
-const DisplayValue = ({
+export const DisplayValue = ({
   value,
   symbol,
+  style,
+  className,
 }: {
   value: number | ReactElement | BigNumber
   symbol?: string
+  style?: React.CSSProperties
+  className?: string
 }): ReactElement => {
   const {
     currentLanguage: { locale },
   } = useTranslation()
   if (!value) {
-    return <ValueText>-</ValueText>
+    return <ValueText className={className}>-</ValueText>
   }
   if (typeof value === 'number' || value instanceof BigNumber) {
     const val = value instanceof BigNumber ? getBalanceAmount(value).toNumber() : value
@@ -36,7 +42,7 @@ const DisplayValue = ({
       sigFigs: 4,
     })
     return (
-      <ValueText>
+      <ValueText style={style} className={className}>
         {valueStr}
         {symbol && <SymbolText>&nbsp;{symbol}</SymbolText>}
       </ValueText>
@@ -45,7 +51,7 @@ const DisplayValue = ({
   return value
 }
 
-const DisplayUSDValue = ({ value }: { value?: number | BigNumber }): ReactElement | null => {
+export const DisplayUSDValue = ({ value }: { value?: number | BigNumber }): ReactElement | null => {
   const {
     currentLanguage: { locale },
   } = useTranslation()
@@ -58,34 +64,59 @@ const DisplayUSDValue = ({ value }: { value?: number | BigNumber }): ReactElemen
     locale,
     sigFigs: 4,
   })
-  return <UsdValueText>{`$${formattedValue}`}</UsdValueText>
+  return <UsdValueText>{`~($${formattedValue} USD)`}</UsdValueText>
 }
 
-export const VeCakeExitField: React.FC<FieldProps> = ({ label, labelTooltip, value, symbol, usdValue }) => {
-  const { t } = useTranslation()
-
+export const VeCakeExitField: React.FC<FieldProps> = ({
+  label,
+  labelTooltip,
+  valueTooltip,
+  value,
+  symbol,
+  usdValue,
+  valueStyles,
+}) => {
   return (
     <FieldWrapper justifyContent="space-between" alignItems="flex-start">
       <LabelWrapper>
-        <LabelText>
-          {t(label)}
-          {labelTooltip && <TooltipText ml="4px">{labelTooltip}</TooltipText>}
-        </LabelText>
-        <Divider />
+        <Tooltip visible={Boolean(labelTooltip)} tooltip={<Text>{labelTooltip}</Text>}>
+          <LabelText>{label}</LabelText>
+        </Tooltip>
       </LabelWrapper>
-
       <ValueWrapper>
-        <DisplayValue value={value} symbol={symbol} />
+        <Tooltip visible={Boolean(valueTooltip)} tooltip={<Text>{valueTooltip}</Text>}>
+          <DisplayValue style={valueStyles} value={value} symbol={symbol} />
+        </Tooltip>
         <DisplayUSDValue value={usdValue} />
       </ValueWrapper>
     </FieldWrapper>
   )
 }
 
+const Tooltip = ({
+  tooltip,
+  children,
+  visible,
+}: {
+  tooltip?: ReactElement
+  children: ReactElement
+  visible: boolean
+}) => {
+  const tooltipObj = useTooltip(tooltip)
+
+  return (
+    <>
+      {visible && tooltipObj.tooltip}
+      {visible && <TooltipText ref={tooltipObj.targetRef}>{children}</TooltipText>}
+      {!visible && children}
+    </>
+  )
+}
+
 // Styled components
 const FieldWrapper = styled(Flex)`
   width: 100%;
-  padding: 8px 0;
+  margin-bottom: 8px;
 `
 
 const LabelWrapper = styled.div`
@@ -103,12 +134,6 @@ const LabelText = styled(Text)`
   vertical-align: middle;
 `
 
-const Divider = styled.div`
-  margin-top: 4px;
-  width: 100%;
-  border-bottom: 2px dotted ${({ theme }) => theme.colors.textDisabled};
-`
-
 const ValueWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -116,7 +141,6 @@ const ValueWrapper = styled.div`
 `
 
 const ValueText = styled(Text)`
-  color: ${({ theme }) => theme.colors.text};
   font-family: Kanit;
   font-weight: 400;
   font-size: 16px;
@@ -125,12 +149,14 @@ const ValueText = styled(Text)`
   vertical-align: middle;
 `
 
-const SymbolText = styled.span`
-  font-weight: 500;
-`
+const SymbolText = styled.span``
 
 const UsdValueText = styled(Text)`
-  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textSubtle};
+  font-family: Kanit;
   font-weight: 400;
-  color: ${({ theme }) => theme.colors.textDisabled};
+  font-size: 12px;
+  line-height: 120%;
+  letter-spacing: 0px;
+  text-align: right;
 `
