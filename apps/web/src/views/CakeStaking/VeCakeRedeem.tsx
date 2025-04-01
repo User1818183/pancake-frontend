@@ -8,6 +8,7 @@ import useAccountActiveChain from 'hooks/useAccountActiveChain'
 import { useCakePrice } from 'hooks/useCakePrice'
 import { useVeCakeBalance } from 'hooks/useTokenBalance'
 import React, { useCallback, useMemo } from 'react'
+import { isMobile } from 'react-device-detect'
 import { useCurrentBlockTimestamp } from 'state/block/hooks'
 import styled from 'styled-components'
 import { getRevenueSharingCakePoolAddress, getRevenueSharingVeCakeAddress } from 'utils/addressHelpers'
@@ -113,7 +114,7 @@ export const VeCakeRedeem: React.FC = () => {
       <Container>
         <RedeemHeader />
         <StyledCard>
-          <SectionTitle>{t('MY CAKE STAKING POSITION')}</SectionTitle>
+          <SectionTitle isMobile={isMobile}>{t('MY CAKE STAKING POSITION')}</SectionTitle>
 
           <FieldGroup>
             <VeCakeExitField label="My veCAKE" value={myVeCake} symbol="veCake" />
@@ -171,7 +172,6 @@ const Bg = styled.div`
   background: ${({ theme }) => theme.colors.gradientBubblegum};
 `
 const Container = styled.div`
-  padding: 24px 16px;
   margin: 0 auto;
   max-width: 1200px;
 `
@@ -180,23 +180,26 @@ const Container = styled.div`
 const StyledCard = styled(Box)`
   max-width: 550px;
   margin: 0 auto;
-  padding: 48px;
+  padding: 24px;
   border-radius: 24px;
   background: ${({ theme }) => theme.colors.backgroundAlt};
+  border: 2px solid ${({ theme }) => theme.colors.primaryBright};
 `
 
-const SectionTitle = styled(Text)`
-  font-size: 16px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.primary};
+const SectionTitle = styled(Text)<{ isMobile: boolean }>`
+  color: ${({ theme }) => theme.colors.secondary};
   margin-bottom: 16px;
+  font-family: Kanit;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 120%;
+  letter-spacing: 3%;
+  text-transform: uppercase;
 `
 
 const FieldGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px;
 `
 
 const SubField = styled.div`

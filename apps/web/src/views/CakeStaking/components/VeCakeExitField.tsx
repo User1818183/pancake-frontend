@@ -45,12 +45,12 @@ const DisplayValue = ({
   return value
 }
 
-const DisplayUSDValue = ({ value }: { value?: number | BigNumber }): ReactElement => {
+const DisplayUSDValue = ({ value }: { value?: number | BigNumber }): ReactElement | null => {
   const {
     currentLanguage: { locale },
   } = useTranslation()
   if (!value) {
-    return <UsdValueText>-</UsdValueText>
+    return null
   }
   const val = value instanceof BigNumber ? getBalanceAmount(value).toNumber() : value
   const formattedValue = formatLocaleNumber({
@@ -94,9 +94,13 @@ const LabelWrapper = styled.div`
 `
 
 const LabelText = styled(Text)`
-  font-size: 16px;
-  font-weight: 600;
   color: ${({ theme }) => theme.colors.textSubtle};
+  font-family: Kanit;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 120%;
+  letter-spacing: 0px;
+  vertical-align: middle;
 `
 
 const Divider = styled.div`
@@ -112,9 +116,13 @@ const ValueWrapper = styled.div`
 `
 
 const ValueText = styled(Text)`
-  font-size: 18px;
-  font-weight: 700;
   color: ${({ theme }) => theme.colors.text};
+  font-family: Kanit;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
+  vertical-align: middle;
 `
 
 const SymbolText = styled.span`

@@ -9,17 +9,27 @@ export const RedeemHeader: React.FC = () => {
   const { isMobile } = useMatchBreakpoints()
 
   return (
-    <Wrapper>
+    <Wrapper isMobile>
       <Content $isMobile={isMobile}>
         <TextContent>
           <Title $isMobile={isMobile}>{t('Redeem Staked CAKE')}</Title>
           <SubText $isMobile={isMobile}>
             {t('You may now redeem previously locked CAKE and claim remaining rewards.')}
+            {isMobile && (
+              <AnnouncementLinkMobile href="#">
+                <LinkText>
+                  {t('View details')}
+                  {' >>'}
+                </LinkText>
+              </AnnouncementLinkMobile>
+            )}
           </SubText>
-          <AnnouncementLink href="#">
-            <LinkText $isMobile={isMobile}>{t('View detailed announcement')}</LinkText>
-            <StyledArrowForwardIcon />
-          </AnnouncementLink>
+          {!isMobile && (
+            <AnnouncementLink href="#">
+              <LinkText>{t('View detailed announcement')}</LinkText>
+              <StyledArrowForwardIcon />
+            </AnnouncementLink>
+          )}
         </TextContent>
 
         {!isMobile && (
@@ -32,9 +42,9 @@ export const RedeemHeader: React.FC = () => {
   )
 }
 
-const Wrapper = styled.div`
+const Wrapper = styled.div<{ isMobile: boolean }>`
   padding: 24px 16px;
-  margin-top: 40px;
+  margin-top: ${({ isMobile }) => (isMobile ? '0' : '40px')};
   margin-bottom: 24px;
   position: relative;
 `
@@ -56,8 +66,6 @@ const Title = styled.h1<{ $isMobile: boolean }>`
   font-weight: 600;
   font-size: ${({ $isMobile }) => ($isMobile ? '32px' : '64px')};
   line-height: 110%;
-  letter-spacing: 0%;
-  vertical-align: middle;
   color: ${({ theme }) => theme.colors.secondary};
   margin-bottom: 24px;
 `
@@ -67,25 +75,37 @@ const SubText = styled.p<{ $isMobile: boolean }>`
   font-weight: 400;
   font-size: 16px;
   line-height: 120%;
-  letter-spacing: 0px;
   color: ${({ theme }) => theme.colors.text};
-  margin-bottom: 24px;
+  margin-bottom: ${({ $isMobile }) => ($isMobile ? '0' : '24px')};
+`
+
+const AnnouncementLinkMobile = styled(Link)`
+  display: inline;
+  font-family: Kanit;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0%;
 `
 
 const AnnouncementLink = styled(Link)`
   display: inline-flex;
   align-items: center;
-  font-weight: 700;
+  font-family: Kanit;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 120%;
+  letter-spacing: 3%;
+  vertical-align: middle;
 `
 
-const LinkText = styled.span<{ $isMobile: boolean }>`
+const LinkText = styled.span`
   color: ${({ theme }) => theme.colors.primary};
-  font-size: ${({ $isMobile }) => ($isMobile ? '16px' : '24px')};
   font-family: Kanit;
 `
 
 const StyledArrowForwardIcon = styled(ArrowForwardIcon)`
-  margin-left: 8px;
+  margin-left: 4px;
   color: ${({ theme }) => theme.colors.primary};
 `
 
