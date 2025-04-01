@@ -117,6 +117,10 @@ import {
   getContract as viemGetContract,
 } from 'viem'
 
+export type GetContractFn<TAbi extends Abi | readonly unknown[], TWalletClient extends WalletClient> = (
+  ...args: any[]
+) => ReturnType<typeof getContract<TAbi, TWalletClient>>
+
 export const getContract = <TAbi extends Abi | readonly unknown[], TWalletClient extends WalletClient>({
   abi,
   address,
@@ -530,7 +534,10 @@ export const getFixedStakingContract = (signer?: WalletClient, chainId?: number)
   })
 }
 
-export const getVeCakeContract = (signer?: WalletClient, chainId?: number) => {
+export const getVeCakeContract: GetContractFn<typeof veCakeABI, WalletClient> = (
+  signer?: WalletClient,
+  chainId?: number,
+) => {
   return getContract({
     abi: veCakeABI,
     address: getVeCakeAddress(chainId) ?? getVeCakeAddress(ChainId.BSC),
