@@ -10,13 +10,13 @@ import { SUGGESTED_BASES } from 'config/constants/exchange'
 import { AutoRow } from '../Layout/Row'
 import { CommonBasesType } from './types'
 
-const ButtonWrapper = styled.div`
+export const ButtonWrapper = styled.div`
   display: inline-block;
   vertical-align: top;
   margin-right: 10px;
 `
 
-const BaseWrapper = styled.div<{ disable?: boolean }>`
+export const BaseWrapper = styled.div<{ disable?: boolean }>`
   border: 1px solid ${({ theme, disable }) => (disable ? 'transparent' : theme.colors.dropdown)};
   border-radius: ${({ theme }) => theme.radii['20px']};
   padding-left: 2px;
@@ -26,12 +26,12 @@ const BaseWrapper = styled.div<{ disable?: boolean }>`
     cursor: ${({ disable }) => !disable && 'pointer'};
     background-color: ${({ theme, disable }) => !disable && theme.colors.background};
   }
-  background-color: ${({ theme }) => theme.colors.tertiary};
-  opacity: ${({ disable }) => disable && '0.4'};
+  color: ${({ theme, disable }) => (disable ? theme.colors.backgroundAlt : theme.colors.textSubtle)} !important;
+  background-color: ${({ theme, disable }) => (disable ? theme.colors.textSubtle : theme.colors.tertiary)};
   transition: background-color 0.15s;
 `
 
-const RowWrapper = styled.div`
+export const RowWrapper = styled.div`
   white-space: nowrap;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -80,7 +80,9 @@ export default function CommonBases({
             disable={selectedCurrency?.isNative}
           >
             <CurrencyLogo showChainLogo currency={native} />
-            <Text p="2px 6px">{native?.symbol}</Text>
+            <Text p="2px 6px" color="inherit">
+              {native?.symbol}
+            </Text>
           </BaseWrapper>
         </ButtonWrapper>
         {(chainId ? SUGGESTED_BASES[chainId] || [] : []).map((token: Token) => {
@@ -89,7 +91,9 @@ export default function CommonBases({
             <ButtonWrapper key={`buttonBase#${token.address}`}>
               <BaseWrapper onClick={() => !selected && onSelect(token)} disable={selected}>
                 <CurrencyLogo showChainLogo currency={token} style={{ borderRadius: '50%' }} />
-                <Text p="2px 6px">{token.symbol}</Text>
+                <Text p="2px 6px" color="inherit">
+                  {token.symbol}
+                </Text>
               </BaseWrapper>
             </ButtonWrapper>
           )

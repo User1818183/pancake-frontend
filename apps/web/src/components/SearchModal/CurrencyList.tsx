@@ -1,10 +1,9 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { Currency, CurrencyAmount, Token } from '@pancakeswap/sdk'
+import { ChainId, Currency, CurrencyAmount, Token } from '@pancakeswap/sdk'
 import { ArrowForwardIcon, Column, QuestionHelper, Text } from '@pancakeswap/uikit'
 import { formatAmount } from '@pancakeswap/utils/formatFractions'
 import { CurrencyLogo } from '@pancakeswap/widgets-internal'
 import { LightGreyCard } from 'components/Card'
-import { useActiveChainId } from 'hooks/useActiveChainId'
 import useNativeCurrency from 'hooks/useNativeCurrency'
 import { CSSProperties, MutableRefObject, useCallback, useMemo } from 'react'
 import { FixedSizeList } from 'react-window'
@@ -117,6 +116,7 @@ export default function CurrencyList({
   setImportToken,
   breakIndex,
   showChainLogo,
+  chainId,
 }: {
   height: number | string
   currencies: Currency[]
@@ -130,8 +130,9 @@ export default function CurrencyList({
   setImportToken: (token: Token) => void
   breakIndex: number | undefined
   showChainLogo?: boolean
+  chainId?: ChainId
 }) {
-  const native = useNativeCurrency()
+  const native = useNativeCurrency(chainId)
 
   const itemData: (Currency | undefined)[] = useMemo(() => {
     let formatted: (Currency | undefined)[] = showNative
@@ -143,8 +144,6 @@ export default function CurrencyList({
     return formatted
   }, [breakIndex, currencies, inactiveCurrencies, showNative, native])
 
-  const { chainId } = useActiveChainId()
-
   const { t } = useTranslation()
 
   const Row = useCallback(
@@ -155,7 +154,7 @@ export default function CurrencyList({
       const otherSelected = Boolean(otherCurrency && currency && otherCurrency.equals(currency))
 
       const handleSelect = () => onCurrencySelect(currency)
-      const token = wrappedCurrency(currency, chainId)
+      const token = wrappedCurrency(currency, currency.chainId)
       const showImport = index > currencies.length
 
       if (index === breakIndex || !data) {
@@ -202,7 +201,6 @@ export default function CurrencyList({
     [
       selectedCurrency,
       otherCurrency,
-      chainId,
       currencies.length,
       breakIndex,
       onCurrencySelect,

@@ -1,8 +1,8 @@
 import { useDebounce, useSortedTokensByQuery } from '@pancakeswap/hooks'
 import { useTranslation } from '@pancakeswap/localization'
 /* eslint-disable no-restricted-syntax */
-import { Currency, Token } from '@pancakeswap/sdk'
-import { WrappedTokenInfo, createFilterToken } from '@pancakeswap/token-lists'
+import { ChainId, Currency, getTokenComparator, Token } from '@pancakeswap/sdk'
+import { createFilterToken, WrappedTokenInfo } from '@pancakeswap/token-lists'
 import { AutoColumn, Box, Column, Input, Text, useMatchBreakpoints } from '@pancakeswap/uikit'
 import { useAudioPlay } from '@pancakeswap/utils/user'
 import { KeyboardEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -14,12 +14,14 @@ import useNativeCurrency from 'hooks/useNativeCurrency'
 import { useAllLists, useInactiveListUrls } from 'state/lists/hooks'
 import { safeGetAddress } from 'utils'
 
-import { useTokenComparator } from 'hooks/useTokenComparator'
+import { UpdaterByChainId } from 'state/lists/updater'
+import { useAllTokenBalances } from 'state/wallet/hooks'
 import { useAllTokens, useIsUserAddedToken, useToken } from '../../hooks/Tokens'
 import Row from '../Layout/Row'
 import CommonBases from './CommonBases'
 import CurrencyList from './CurrencyList'
 import ImportRow from './ImportRow'
+import NetworkSection from './NetworkSection'
 import { getSwapSound } from './swapSound'
 
 interface CurrencySearchProps {
@@ -92,22 +94,24 @@ function CurrencySearch({
   tokensToShow,
   showChainLogo,
 }: CurrencySearchProps) {
+  const { chainId: activeChainId } = useActiveChainId()
+
   const { t } = useTranslation()
-  const { chainId } = useActiveChainId()
   const [searchQuery, setSearchQuery] = useState<string>('')
   const debouncedQuery = useDebounce(searchQuery, 200)
   // refs for fixed size lists
   const fixedList = useRef<FixedSizeList>()
 
-  const [invertSearchOrder] = useState<boolean>(false)
-
   const { isMobile } = useMatchBreakpoints()
   const [audioPlay] = useAudioPlay()
 
+  const [selectedChainId, setSelectedChainId] = useState<ChainId | undefined>(selectedCurrency?.chainId)
+
   // === use all tokens and native currency related to the chainId
 
-  const allTokens = useAllTokens(selectedCurrency?.chainId)
-  const native = useNativeCurrency(selectedCurrency?.chainId)
+  const allTokens = useAllTokens(selectedChainId)
+  const native = useNativeCurrency(selectedChainId)
+
   const searchToken = useToken(debouncedQuery)
   // if they input an address, use it
   const searchTokenIsAdded = useIsUserAddedToken(searchToken)
@@ -128,12 +132,14 @@ function CurrencySearch({
   }, [tokensToShow, allTokens, debouncedQuery])
 
   const filteredQueryTokens = useSortedTokensByQuery(filteredTokens, debouncedQuery)
-  const tokenComparator = useTokenComparator(invertSearchOrder)
 
-  const filteredSortedTokens: Token[] = useMemo(
-    () => [...filteredQueryTokens].sort(tokenComparator),
-    [filteredQueryTokens, tokenComparator],
-  )
+  const balances = useAllTokenBalances(selectedChainId)
+
+  const filteredSortedTokens: Token[] = useMemo(() => {
+    const tokenComparator = getTokenComparator(balances ?? {})
+
+    return [...filteredQueryTokens].sort(tokenComparator)
+  }, [filteredQueryTokens, balances])
 
   const handleCurrencySelect = useCallback(
     (currency: Currency) => {
@@ -211,6 +217,7 @@ function CurrencySearch({
           showImportView={showImportView}
           setImportToken={setImportToken}
           showChainLogo={showChainLogo}
+          chainId={selectedChainId}
         />
       </Box>
     ) : (
@@ -241,6 +248,8 @@ function CurrencySearch({
 
   return (
     <>
+      <UpdaterByChainId chainId={selectedChainId ?? activeChainId} />
+
       <AutoColumn gap="16px">
         {showSearchInput && (
           <Row>
@@ -256,9 +265,10 @@ function CurrencySearch({
             />
           </Row>
         )}
+        <NetworkSection chainId={selectedChainId} onSelect={(currentChainId) => setSelectedChainId(currentChainId)} />
         {showCommonBases && (
           <CommonBases
-            chainId={chainId}
+            chainId={selectedChainId}
             onSelect={handleCurrencySelect}
             selectedCurrency={selectedCurrency}
             commonBasesType={commonBasesType}

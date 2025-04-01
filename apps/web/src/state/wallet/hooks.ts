@@ -11,7 +11,7 @@ import { useMultipleContractSingleDataWagmi } from '../multicall/hooks'
 /**
  * Returns a map of the given addresses to their eventually consistent BNB balances.
  */
-export function useNativeBalances(account?: Address): CurrencyAmount<Native> | undefined {
+export function useNativeBalances(account?: Address): CurrencyAmount<Native> {
   const native = useNativeCurrency()
 
   const { data: results } = useBalance({
@@ -39,7 +39,11 @@ export function useTokenBalancesWithLoadingIndicator(
   // NOTE: assume all tokens have the same chainId
   const chainId = first(validatedTokens)?.chainId
 
-  const { data: balances, isLoading } = useMultipleContractSingleDataWagmi({
+  const {
+    data: balances,
+    isLoading,
+    error,
+  } = useMultipleContractSingleDataWagmi({
     abi: erc20Abi,
     addresses: validatedTokenAddresses,
     functionName: 'balanceOf',
@@ -79,16 +83,9 @@ export function useTokenBalancesWithLoadingIndicator(
   return useMemo(() => [aggregatedBalances, isLoading], [aggregatedBalances, isLoading])
 }
 
-export function useTokenBalances(
-  address?: string,
-  tokens?: (Token | undefined)[],
-): { [tokenAddress: string]: CurrencyAmount<Token> | undefined } {
-  return useTokenBalancesWithLoadingIndicator(address, tokens)[0]
-}
-
 // get the balance for a single token/account combo
 export function useTokenBalance(account?: string, token?: Token): CurrencyAmount<Token> | undefined {
-  const tokenBalances = useTokenBalances(
+  const [tokenBalances] = useTokenBalancesWithLoadingIndicator(
     account,
     useMemo(() => [token], [token]),
   )
@@ -106,7 +103,7 @@ export function useCurrencyBalances(
     [...(currencies ?? [])],
   )
 
-  const tokenBalances = useTokenBalances(account, tokens)
+  const [tokenBalances] = useTokenBalancesWithLoadingIndicator(account, tokens)
 
   const containsNative: boolean = useMemo(
     () => currencies?.some((currency) => currency?.isNative) ?? false,
@@ -140,10 +137,13 @@ export function useCurrencyBalance(account?: string, currency?: Currency | null)
 }
 
 // mimics useAllBalances
-export function useAllTokenBalances(): { [tokenAddress: string]: CurrencyAmount<Token> | undefined } {
+export function useAllTokenBalances(chainId?: number): { [tokenAddress: string]: CurrencyAmount<Token> | undefined } {
   const { address: account } = useAccount()
-  const allTokens = useAllTokens()
+  const allTokens = useAllTokens(chainId)
+
   const allTokensArray = useMemo(() => Object.values(allTokens ?? {}), [allTokens])
-  const balances = useTokenBalances(account ?? undefined, allTokensArray)
-  return balances ?? {}
+
+  const [tokenBalances] = useTokenBalancesWithLoadingIndicator(account, allTokensArray)
+
+  return tokenBalances
 }
