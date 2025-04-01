@@ -107,6 +107,7 @@ const whitelist = [
   `If more %lpLabel% LP is deposited in our Farm this week, we'll increase APT rewards for %stakedToken% Syrup Pool next week.`,
   'Enjoying the %stakingToken% Staking APR? Get more rewards with the %lpLabel% LP on our',
   'The rewards for this Syrup Pool will not be applicable to or claimable by',
+  'This Product is in beta.',
 ]
 
 describe.concurrent('Check translations integrity', () => {
