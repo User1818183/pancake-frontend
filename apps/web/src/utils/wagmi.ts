@@ -33,7 +33,12 @@ export const walletConnectNoQrCodeConnector = walletConnect({
   projectId: 'e542ff314e26ff34de2d4fba98db70bb',
 })
 
-export const metaMaskConnector = metaMask()
+export const metaMaskConnector = metaMask({
+  dappMetadata: {
+    name: 'PancakeSwap',
+    iconUrl: 'https://pancakeswap.com/logo.png',
+  },
+})
 export const phantomConnector = injected({ target: 'phantom', shimDisconnect: false })
 export const trustConnector = injected({ target: 'trust', shimDisconnect: false })
 
@@ -43,16 +48,10 @@ const bloctoConnector = blocto({
 
 export const binanceWeb3WalletConnector = getWagmiConnectorV2()
 
-export const noopStorage = {
-  getItem: (_key: any) => '',
-  setItem: (_key: any, _value: any) => {},
-  removeItem: (_key: any) => {},
-}
-
 const PUBLIC_MAINNET = 'https://ethereum.publicnode.com'
 
 export const transports = chains.reduce((ts, chain) => {
-  let httpStrings: string[] | readonly string[] = []
+  let httpStrings: string[] | readonly string[]
 
   if (process.env.NODE_ENV === 'test' && chain.id === mainnet.id) {
     httpStrings = [PUBLIC_MAINNET]
@@ -73,9 +72,7 @@ export const transports = chains.reduce((ts, chain) => {
 }, {} as Record<number, Transport>)
 
 const injectedTransports = chains.reduce((ts, chain) => {
-  let httpStrings: string[] | readonly string[] = []
-
-  httpStrings = PUBLIC_NODES[chain.id] ? PUBLIC_NODES[chain.id] : []
+  const httpStrings: string[] | readonly string[] = PUBLIC_NODES[chain.id] ? PUBLIC_NODES[chain.id] : []
 
   const injectedTransport =
     typeof window !== 'undefined' && window.ethereum ? custom(window.ethereum as any) : undefined
