@@ -136,7 +136,7 @@ export const GasTokenSelector = ({ inputCurrency, ...props }: GasTokenSelectorPr
   const [gasToken, setGasToken] = useGasToken()
   const gasTokenInfo = paymasterInfo[gasToken.isToken ? gasToken?.wrapped.address : '']
 
-  const nativeBalances = useNativeBalances([account])
+  const nativeBalances = useNativeBalances(account)
   const [balances, balancesLoading] = useTokenBalancesWithLoadingIndicator(
     account,
     paymasterTokens.filter((token) => token.isToken) as any[],

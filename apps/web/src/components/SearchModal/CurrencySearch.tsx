@@ -94,25 +94,27 @@ function CurrencySearch({
 }: CurrencySearchProps) {
   const { t } = useTranslation()
   const { chainId } = useActiveChainId()
-
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const debouncedQuery = useDebounce(searchQuery, 200)
   // refs for fixed size lists
   const fixedList = useRef<FixedSizeList>()
 
-  const [searchQuery, setSearchQuery] = useState<string>('')
-  const debouncedQuery = useDebounce(searchQuery, 200)
-
   const [invertSearchOrder] = useState<boolean>(false)
-
-  const allTokens = useAllTokens()
-
-  // if they input an address, use it
-  const searchToken = useToken(debouncedQuery)
-  const searchTokenIsAdded = useIsUserAddedToken(searchToken)
 
   const { isMobile } = useMatchBreakpoints()
   const [audioPlay] = useAudioPlay()
 
-  const native = useNativeCurrency()
+  // === use all tokens and native currency related to the chainId
+
+  const allTokens = useAllTokens(selectedCurrency?.chainId)
+  const native = useNativeCurrency(selectedCurrency?.chainId)
+  const searchToken = useToken(debouncedQuery)
+  // if they input an address, use it
+  const searchTokenIsAdded = useIsUserAddedToken(searchToken)
+  // if no results on main list, show option to expand into inactive
+  const filteredInactiveTokens = useSearchInactiveTokenLists(debouncedQuery)
+
+  // ====
 
   const showNative: boolean = useMemo(() => {
     if (tokensToShow) return false
@@ -175,9 +177,6 @@ function CurrencySearch({
     },
     [debouncedQuery, filteredSortedTokens, handleCurrencySelect, native],
   )
-
-  // if no results on main list, show option to expand into inactive
-  const filteredInactiveTokens = useSearchInactiveTokenLists(debouncedQuery)
 
   const hasFilteredInactiveTokens = Boolean(filteredInactiveTokens?.length)
 

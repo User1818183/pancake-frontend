@@ -1,3 +1,4 @@
+import { useReadContracts } from '@pancakeswap/wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import { useActiveChainId } from 'hooks/useActiveChainId'
 import { useAtom } from 'jotai'
@@ -31,7 +32,9 @@ export const NEVER_RELOAD: ListenerOptions = {
 
 // the lowest level call for subscribing to contract data
 function useCallsData(calls: (Call | undefined)[], options?: ListenerOptions): CallResult[] {
-  const { chainId } = useActiveChainId()
+  const { chainId: activeChainId } = useActiveChainId()
+  const chainId = options?.chainId ?? activeChainId
+
   const [{ callResults }, dispatch] = useAtom(multicallReducerAtom)
 
   const serializedCallKeys: string = useMemo(
@@ -230,6 +233,24 @@ export type MultipleSameDataCallParameters<
 } & any
 // GetFunctionArgs<TAbi, TFunctionName>
 
+export function useMultipleContractSingleDataWagmi({
+  abi,
+  addresses,
+  functionName,
+  args,
+  options,
+}: MultipleSameDataCallParameters) {
+  return useReadContracts({
+    contracts: addresses.map((address) => ({
+      abi,
+      address,
+      functionName,
+      args,
+      chainId: options?.chainId,
+    })),
+  })
+}
+
 export function useMultipleContractSingleData<TAbi extends Abi | readonly unknown[], TFunctionName extends string>({
   abi,
   addresses,
@@ -239,7 +260,7 @@ export function useMultipleContractSingleData<TAbi extends Abi | readonly unknow
 }: // FIXME: wagmiv2
 // MultipleSameDataCallParameters<TAbi, TFunctionName>): CallState<ContractFunctionResult<TAbi, TFunctionName>>[] {
 MultipleSameDataCallParameters<TAbi, TFunctionName>): CallState<any>[] {
-  const { enabled = true, blocksPerFetch } = options ?? {}
+  const { enabled = true, blocksPerFetch, chainId } = options ?? {}
   const callData: Hex | undefined = useMemo(
     () =>
       abi && enabled
@@ -266,18 +287,26 @@ MultipleSameDataCallParameters<TAbi, TFunctionName>): CallState<any>[] {
         : [],
     [addresses, callData],
   )
+  const { chainId: activeChainId } = useActiveChainId()
 
-  const results = useCallsData(calls, options?.blocksPerFetch ? { blocksPerFetch } : DEFAULT_OPTIONS)
-  const { chainId } = useActiveChainId()
+  const usedChainId = chainId ?? activeChainId
+
+  const optionsWithChainId = useMemo(
+    () =>
+      options?.blocksPerFetch ? { blocksPerFetch, chainId: usedChainId } : { ...DEFAULT_OPTIONS, chainId: usedChainId },
+    [options?.blocksPerFetch, usedChainId],
+  )
+
+  const results = useCallsData(calls, optionsWithChainId)
 
   const queryClient = useQueryClient()
 
   return useMemo(() => {
     const currentBlockNumber = queryClient.getQueryCache().find<number>({
-      queryKey: ['blockNumber', chainId],
+      queryKey: ['blockNumber', usedChainId],
     })?.state?.data
     return results.map((result) => toCallState(result, abi, functionName, currentBlockNumber))
-  }, [queryClient, chainId, results, abi, functionName])
+  }, [queryClient, usedChainId, results, abi, functionName])
 }
 
 export type SingleCallParameters<

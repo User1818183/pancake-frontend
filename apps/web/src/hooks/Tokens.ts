@@ -1,13 +1,15 @@
 /* eslint-disable no-param-reassign */
 import { ChainId } from '@pancakeswap/chains'
+import { Currency, ERC20Token, NativeCurrency, Token } from '@pancakeswap/sdk'
 import { type Address, zeroAddress } from 'viem'
-import { ERC20Token, Currency, NativeCurrency, Token } from '@pancakeswap/sdk'
 
 import { TokenAddressMap } from '@pancakeswap/token-lists'
 import { useReadContracts } from '@pancakeswap/wagmi'
 import { GELATO_NATIVE } from 'config/constants'
 import { UnsafeCurrency } from 'config/constants/types'
 import { useAtomValue } from 'jotai'
+import memoize from 'lodash/memoize'
+import uniqueId from 'lodash/uniqueId'
 import { useMemo } from 'react'
 import {
   combinedCurrenciesMapFromActiveUrlsAtom,
@@ -18,8 +20,6 @@ import {
 } from 'state/lists/hooks'
 import { safeGetAddress } from 'utils'
 import { erc20Abi } from 'viem'
-import memoize from 'lodash/memoize'
-import uniqueId from 'lodash/uniqueId'
 import useUserAddedTokens, { useUserAddedTokensByChainIds } from '../state/user/hooks/useUserAddedTokens'
 import { useActiveChainId } from './useActiveChainId'
 import useNativeCurrency from './useNativeCurrency'
@@ -49,8 +49,11 @@ const mapWithoutUrlsBySymbol = (tokenMap?: TokenAddressMap<ChainId>, chainId?: n
 /**
  * Returns all tokens of activeChain that are from active urls and user added tokens
  */
-export function useAllTokens(): { [address: string]: ERC20Token } {
-  const { chainId } = useActiveChainId()
+export function useAllTokens(chainId?: ChainId): { [address: string]: ERC20Token } {
+  const { chainId: activeChainId } = useActiveChainId()
+
+  const chainIdToUse = chainId ?? activeChainId
+
   const tokenMap = useAtomValue(combinedTokenMapFromActiveUrlsAtom)
   const userAddedTokens = useUserAddedTokens()
   return useMemo(() => {
@@ -69,10 +72,10 @@ export function useAllTokens(): { [address: string]: ERC20Token } {
           },
           // must make a copy because reduce modifies the map, and we do not
           // want to make a copy in every iteration
-          mapWithoutUrls(tokenMap, chainId),
+          mapWithoutUrls(tokenMap, chainIdToUse),
         )
     )
-  }, [userAddedTokens, tokenMap, chainId])
+  }, [userAddedTokens, tokenMap, chainIdToUse])
 }
 
 export type TokenChainAddressMap<TChainId extends number = number> = {
