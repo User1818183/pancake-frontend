@@ -1,17 +1,22 @@
 import { useTranslation } from '@pancakeswap/localization'
-import { zeroAddress } from '@pancakeswap/price-api-sdk'
-import { Box, Button, ChevronUpIcon, IconButton, Text, useToast } from '@pancakeswap/uikit'
+import { Box, Button, ChevronUpIcon, IconButton, Text } from '@pancakeswap/uikit'
 import BigNumber from 'bignumber.js'
 import ConnectWalletButton from 'components/ConnectWalletButton'
-import { ToastDescriptionWithTx } from 'components/Toast'
+import { WEEK } from 'config/constants/veCake'
 import dayjs from 'dayjs'
+import useAccountActiveChain from 'hooks/useAccountActiveChain'
 import { useCakePrice } from 'hooks/useCakePrice'
 import { useVeCakeBalance } from 'hooks/useTokenBalance'
 import React, { useCallback, useMemo } from 'react'
+import { useCurrentBlockTimestamp } from 'state/block/hooks'
 import styled from 'styled-components'
+import { getRevenueSharingCakePoolAddress, getRevenueSharingVeCakeAddress } from 'utils/addressHelpers'
+import { getRevenueSharingPoolGatewayContract } from 'utils/contractHelpers'
 import { formatTime } from 'utils/formatTime'
-import { useAccount } from 'wagmi'
+import { poolStartWeekCursors } from 'views/CakeStaking/config'
+import { RedeemHeader } from './components/RedeemHeader'
 import { VeCakeExitField } from './components/VeCakeExitField'
+import { createWriteContractCallback } from './hooks/useContractWrite/createWriteContractCallback'
 import { useWriteEarlyWithdrawCallback } from './hooks/useContractWrite/useWriteEarlyWithdrawCallback'
 import { useRevenueSharingCakePool, useRevenueSharingVeCake } from './hooks/useRevenueSharingProxy'
 import { useCakeLockStatus } from './hooks/useVeCakeUserInfo'
@@ -41,13 +46,14 @@ const useCakeExitInfo = () => {
   }
 }
 
-export const VeCakeExit: React.FC = () => {
+const useClaimAll = createWriteContractCallback(getRevenueSharingPoolGatewayContract, 'claimMultiple')
+export const VeCakeRedeem: React.FC = () => {
   const {
     t,
     currentLanguage: { locale },
   } = useTranslation()
 
-  const { address: account } = useAccount()
+  const { account, chainId } = useAccountActiveChain()
   const isWalletConnected = !!account
   const {
     myVeCake,
@@ -61,11 +67,12 @@ export const VeCakeExit: React.FC = () => {
   } = useCakeExitInfo()
   const userStaked = lockedCake.gt(0)
 
-  const { toastSuccess, toastError } = useToast()
   const totalAmount = cakePoolRewards.plus(veCakeRewards).plus(lockedCake)
   const totalAmountUSD = totalAmount.times(cakePrice)
   const userHasRewards = isWalletConnected && (cakePoolRewards.gt(0) || veCakeRewards.gt(0))
   const earlyWithdraw = useWriteEarlyWithdrawCallback()
+  const currentBlockTimestamp = useCurrentBlockTimestamp()
+  const claimAll = useClaimAll()
 
   const buttonLabel = useMemo(() => {
     if (!isWalletConnected) return t('Connect Wallet')
@@ -81,73 +88,98 @@ export const VeCakeExit: React.FC = () => {
   }, [isWalletConnected, userStaked, userHasRewards])
 
   const handleClick = useCallback(async () => {
+    if (!account || !chainId || !currentBlockTimestamp) return
     if (userStaked) {
-      try {
-        await earlyWithdraw.callMethod(zeroAddress, BigInt(lockedCake.toFixed(0)))
-        toastSuccess(
-          t('Success!'),
-          <ToastDescriptionWithTx txHash={earlyWithdraw.txHash}>
-            {t('You have successfully claimed your rewards.')}
-          </ToastDescriptionWithTx>,
-        )
-      } catch (err: any) {
-        console.error('Redeem error', err)
-        toastError(`Redeem Error:${err.toString()}`)
-      }
+      await earlyWithdraw.callMethod(account, BigInt(lockedCake.toFixed(0)))
     }
-  }, [])
+
+    if (userHasRewards) {
+      const cakePoolAddress = getRevenueSharingCakePoolAddress(chainId)
+      const cakePoolLength = Math.ceil((currentBlockTimestamp - poolStartWeekCursors[cakePoolAddress]) / WEEK / 52)
+      const veCakeAddress = getRevenueSharingVeCakeAddress(chainId)
+      const veCakePoolLength = Math.ceil((currentBlockTimestamp - poolStartWeekCursors[veCakeAddress]) / WEEK / 52)
+
+      const revenueSharingPools = [
+        ...Array(cakePoolLength).fill(cakePoolAddress),
+        ...Array(veCakePoolLength).fill(veCakeAddress),
+      ]
+
+      await claimAll.callMethod(revenueSharingPools, account)
+    }
+  }, [earlyWithdraw, userStaked])
 
   return (
-    <StyledCard>
-      <SectionTitle>{t('MY CAKE STAKING POSITION')}</SectionTitle>
+    <Bg>
+      <Container>
+        <RedeemHeader />
+        <StyledCard>
+          <SectionTitle>{t('MY CAKE STAKING POSITION')}</SectionTitle>
 
-      <FieldGroup>
-        <VeCakeExitField label="My veCAKE" value={myVeCake} symbol="veCake" />
+          <FieldGroup>
+            <VeCakeExitField label="My veCAKE" value={myVeCake} symbol="veCake" />
 
-        <VeCakeExitField label="My Locked CAKE" value={lockedCake} symbol="CAKE" />
+            <VeCakeExitField label="My Locked CAKE" value={lockedCake} symbol="CAKE" />
 
-        <VeCakeExitField
-          label="Unlock Date"
-          value={
-            <>
-              <Text>{t('Anytime')}</Text>
-              <Text>{endDate}</Text>
-            </>
-          }
-        />
+            <VeCakeExitField
+              label="Unlock Date"
+              value={
+                <>
+                  <Text>{t('Anytime')}</Text>
+                  <Text>{endDate}</Text>
+                </>
+              }
+            />
 
-        <VeCakeExitField label="My Total rewards" value={availableClaim} symbol="CAKE" usdValue={availableClaimUSD} />
+            <VeCakeExitField
+              label="My Total rewards"
+              value={availableClaim}
+              symbol="CAKE"
+              usdValue={availableClaimUSD}
+            />
 
-        <ArrowButton>
-          <ChevronUpIcon color="currentColor" />
-        </ArrowButton>
+            <ArrowButton>
+              <ChevronUpIcon color="currentColor" />
+            </ArrowButton>
 
-        <SubField>
-          <VeCakeExitField label="CAKE Pool Rewards" value={cakePoolRewards} symbol="CAKE" />
-          <VeCakeExitField label="Revenue Sharing Rewards" value={veCakeRewards} symbol="CAKE" />
-        </SubField>
-      </FieldGroup>
+            <SubField>
+              <VeCakeExitField label="CAKE Pool Rewards" value={cakePoolRewards} symbol="CAKE" />
+              <VeCakeExitField label="Revenue Sharing Rewards" value={veCakeRewards} symbol="CAKE" />
+            </SubField>
+          </FieldGroup>
 
-      <DividerLine />
+          <DividerLine />
 
-      <Box mb="16px" mt="8px">
-        <RedeemTitle>{t('REDEEM NOW')}</RedeemTitle>
-        <VeCakeExitField label="Total amount" value={totalAmount} symbol="CAKE" usdValue={totalAmountUSD} />
-      </Box>
+          <Box mb="16px" mt="8px">
+            <RedeemTitle>{t('REDEEM NOW')}</RedeemTitle>
+            <VeCakeExitField label="Total amount" value={totalAmount} symbol="CAKE" usdValue={totalAmountUSD} />
+          </Box>
 
-      {isWalletConnected ? (
-        <StyledButton fullWidth onClick={handleClick} disabled={isButtonDisabled}>
-          {buttonLabel}
-        </StyledButton>
-      ) : (
-        <ConnectWalletButton />
-      )}
-    </StyledCard>
+          {isWalletConnected ? (
+            <StyledButton fullWidth onClick={handleClick} disabled={isButtonDisabled}>
+              {buttonLabel}
+            </StyledButton>
+          ) : (
+            <ConnectWalletButton />
+          )}
+        </StyledCard>
+      </Container>
+    </Bg>
   )
 }
 
+const Bg = styled.div`
+  background: ${({ theme }) => theme.colors.gradientBubblegum};
+`
+const Container = styled.div`
+  padding: 24px 16px;
+  margin: 0 auto;
+  max-width: 1200px;
+`
+
 // Styled Components
 const StyledCard = styled(Box)`
+  max-width: 550px;
+  margin: 0 auto;
   padding: 48px;
   border-radius: 24px;
   background: ${({ theme }) => theme.colors.backgroundAlt};

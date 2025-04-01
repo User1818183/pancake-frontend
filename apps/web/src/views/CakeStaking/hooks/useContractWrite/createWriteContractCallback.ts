@@ -1,8 +1,9 @@
+import useCatchTxError from 'hooks/useCatchTxError'
 import { usePublicNodeWaitForTransaction } from 'hooks/usePublicNodeWaitForTransaction'
 import { atom, useAtom } from 'jotai'
 import { useCallback, useMemo } from 'react'
 import { GetContractFn } from 'utils/contractHelpers'
-import { Abi, ContractFunctionArgs, ContractFunctionName, TransactionReceipt } from 'viem'
+import { Abi, ContractFunctionArgs, ContractFunctionName } from 'viem'
 import { WalletClient } from 'viem/_types/clients/createWalletClient'
 import { useAccount, useWalletClient } from 'wagmi'
 
@@ -18,6 +19,7 @@ export const createWriteContractCallback = <
   const txHashAtom = atom<string>('')
 
   return () => {
+    const { fetchWithCatchTxError, loading } = useCatchTxError()
     const contract = useMemo(() => {
       return getContract()
     }, [getContract])
@@ -31,7 +33,12 @@ export const createWriteContractCallback = <
       async (
         // @ts-ignore
         ...args: ContractFunctionArgs<TAbi, 'nonpayable' | 'payable', TMethod>
-      ): Promise<TransactionReceipt | undefined> => {
+      ): Promise<
+        | {
+            hash: `0x${string}`
+          }
+        | undefined
+      > => {
         // @ts-ignore
         const { request } = await contract.simulate[method](args, {
           account: account!,
@@ -50,13 +57,28 @@ export const createWriteContractCallback = <
         if (hash) {
           const transactionReceipt = await waitForTransaction({ hash })
           setStatus(transactionReceipt?.status === 'success' ? 'CONFIRMED' : 'ERROR')
-          return transactionReceipt
+          return {
+            hash,
+          }
         }
         return undefined
       },
       [contract, account, setStatus, setTxHash, waitForTransaction, walletClient],
     )
 
-    return { callMethod, status, txHash }
+    const caller = useCallback(
+      (
+        // @ts-ignore
+        ...args: ContractFunctionArgs<TAbi, 'nonpayable' | 'payable', TMethod>
+      ) => {
+        return fetchWithCatchTxError(() => {
+          // @ts-ignore
+          return callMethod(...args)
+        })
+      },
+      [callMethod],
+    )
+
+    return { callMethod: caller, status, txHash, loading }
   }
 }

@@ -591,7 +591,10 @@ export const getRevenueSharingVeCakeContract = (signer?: WalletClient, chainId?:
   })
 }
 
-export const getRevenueSharingPoolGatewayContract = (signer?: WalletClient, chainId?: number) => {
+export const getRevenueSharingPoolGatewayContract: GetContractFn<typeof revenueSharingPoolGatewayABI, WalletClient> = (
+  signer?: WalletClient,
+  chainId?: number,
+) => {
   return getContract({
     abi: revenueSharingPoolGatewayABI,
     address: getRevenueSharingPoolGatewayAddress(chainId) ?? getRevenueSharingPoolGatewayAddress(ChainId.BSC),
