@@ -510,7 +510,7 @@ export const idoConfigDict: Record<string, IDOConfig> = {
     icon: '/images/ido/pump.svg',
     chainId: ChainId.BSC,
     bannerUrl: `${ASSET_CDN}/web/ido/purgent-banner.png`,
-    contractAddress: '0x45C6ac2FE011d39C16b1236dFe5AF5E5328843ae',
+    contractAddress: '0x006b9c659fd1cD0D001A2B28a642BCfF5079C4FF',
     tgeTitle: <Trans>Purgent's Token Generation Event</Trans>,
     tgeSubtitle: <Trans>Exclusively via Binance Keyless Wallet</Trans>,
     description: (
