@@ -19,6 +19,7 @@ import {
   http,
 } from 'viem'
 import { usePublicClient } from 'wagmi'
+import { useW3WConfig } from 'contexts/W3WConfigContext'
 import { useActiveChainId } from './useActiveChainId'
 
 export const viemClientsPublicNodes = CHAINS.reduce((prev, cur) => {
@@ -47,6 +48,7 @@ export type PublicNodeWaitForTransactionParams = GetTransactionReceiptParameters
 export function usePublicNodeWaitForTransaction() {
   const { chainId } = useActiveChainId()
   const provider = usePublicClient({ chainId })
+  const w3WConfig = useW3WConfig()
   const refetchBlockData = useFetchBlockData(chainId)
 
   const waitForTransaction_ = useCallback(
@@ -55,7 +57,7 @@ export function usePublicNodeWaitForTransaction() {
         try {
           const selectedChain = opts?.chainId ?? chainId
           // our custom node might be late to sync up
-          if (selectedChain && viemClientsPublicNodes[selectedChain]) {
+          if (!w3WConfig && selectedChain && viemClientsPublicNodes[selectedChain]) {
             const receipt = await viemClientsPublicNodes[selectedChain].getTransactionReceipt({ hash: opts.hash })
             if (receipt.status === 'success') {
               refetchBlockData()
@@ -96,7 +98,7 @@ export function usePublicNodeWaitForTransaction() {
         delay: (chainId ? AVERAGE_CHAIN_BLOCK_TIMES[chainId] : BSC_BLOCK_TIME) * 1000 + 1000,
       }).promise as Promise<TransactionReceipt>
     },
-    [chainId, provider, refetchBlockData],
+    [chainId, provider, refetchBlockData, w3WConfig],
   )
 
   return {
