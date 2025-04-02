@@ -17,29 +17,42 @@ import {
   WaitForTransactionReceiptTimeoutError,
   createPublicClient,
   http,
+  custom,
+  fallback,
 } from 'viem'
 import { usePublicClient } from 'wagmi'
 import { useW3WConfig } from 'contexts/W3WConfigContext'
+import { PUBLIC_NODES } from 'config/nodes'
+import memoize from 'lodash/memoize'
 import { useActiveChainId } from './useActiveChainId'
 
-export const viemClientsPublicNodes = CHAINS.reduce((prev, cur) => {
-  return {
-    ...prev,
-    [cur.id]: createPublicClient({
-      chain: cur,
-      transport: http(first(cur.rpcUrls.default.http), {
-        timeout: 15_000,
-      }),
-      batch: {
-        multicall: {
-          batchSize: 1024 * 200,
-          wait: 16,
+export const getViemClientsPublicNodes = memoize((w3WConfig = false) => {
+  return CHAINS.reduce((prev, cur) => {
+    return {
+      ...prev,
+      [cur.id]: createPublicClient({
+        chain: cur,
+        transport:
+          w3WConfig && typeof window !== 'undefined' && window.ethereum
+            ? custom(window.ethereum as any)
+            : fallback(
+                [
+                  http(first(cur.rpcUrls.default.http), { timeout: 15_000 }), // Primary transport
+                  ...PUBLIC_NODES[cur.id].map((url) => http(url, { timeout: 15_000 })),
+                ],
+                { rank: false },
+              ),
+        batch: {
+          multicall: {
+            batchSize: 1024 * 200,
+            wait: 16,
+          },
         },
-      },
-      pollingInterval: 6_000,
-    }),
-  }
-}, {} as Record<ChainId, PublicClient>)
+        pollingInterval: 6_000,
+      }),
+    }
+  }, {} as Record<ChainId, PublicClient>)
+})
 
 export type PublicNodeWaitForTransactionParams = GetTransactionReceiptParameters & {
   chainId?: number
@@ -57,8 +70,10 @@ export function usePublicNodeWaitForTransaction() {
       const getTransaction = async () => {
         try {
           // our custom node might be late to sync up
-          if (!w3WConfig && selectedChain && viemClientsPublicNodes[selectedChain]) {
-            const receipt = await viemClientsPublicNodes[selectedChain].getTransactionReceipt({ hash: opts.hash })
+          if (selectedChain && getViemClientsPublicNodes(w3WConfig)[selectedChain]) {
+            const receipt = await getViemClientsPublicNodes(w3WConfig)[selectedChain].getTransactionReceipt({
+              hash: opts.hash,
+            })
             if (receipt.status === 'success') {
               refetchBlockData()
             }
