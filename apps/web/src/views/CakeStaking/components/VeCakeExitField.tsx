@@ -35,6 +35,9 @@ export const DisplayValue = ({
   }
   if (typeof value === 'number' || value instanceof BigNumber) {
     const val = value instanceof BigNumber ? getBalanceAmount(value).toNumber() : value
+    if (val === 0) {
+      return <ValueText className={className}>-</ValueText>
+    }
 
     const valueStr = formatLocaleNumber({
       number: val,
@@ -64,6 +67,9 @@ export const DisplayUSDValue = ({ value }: { value?: number | BigNumber }): Reac
     locale,
     sigFigs: 4,
   })
+  if (val === 0) {
+    return <UsdValueText>-</UsdValueText>
+  }
   return <UsdValueText>{`~($${formattedValue} USD)`}</UsdValueText>
 }
 

@@ -1,7 +1,7 @@
 import { SUPPORT_CAKE_STAKING } from 'config/constants/supportChains'
-import CakeStaking from 'views/CakeStaking'
+import { VeCakeRedeem } from 'views/CakeStaking/VeCakeRedeem'
 
-const CakeStakingPage = () => <CakeStaking />
+const CakeStakingPage = () => <VeCakeRedeem />
 
 CakeStakingPage.chains = SUPPORT_CAKE_STAKING
 
