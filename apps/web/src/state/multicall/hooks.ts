@@ -241,6 +241,10 @@ export function useMultipleContractSingleDataWagmi({
   options,
 }: MultipleSameDataCallParameters) {
   return useReadContracts({
+    // 2048 is the maximum batch size for wagmi.
+    // If not set, it will send large calldata in one request,
+    // it will also cause the request to fail.
+    batchSize: 2048,
     contracts: addresses.map((address) => ({
       abi,
       address,
