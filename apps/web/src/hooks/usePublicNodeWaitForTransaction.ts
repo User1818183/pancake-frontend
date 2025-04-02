@@ -53,9 +53,9 @@ export function usePublicNodeWaitForTransaction() {
 
   const waitForTransaction_ = useCallback(
     async (opts: PublicNodeWaitForTransactionParams): Promise<TransactionReceipt> => {
+      const selectedChain = opts?.chainId ?? chainId
       const getTransaction = async () => {
         try {
-          const selectedChain = opts?.chainId ?? chainId
           // our custom node might be late to sync up
           if (!w3WConfig && selectedChain && viemClientsPublicNodes[selectedChain]) {
             const receipt = await viemClientsPublicNodes[selectedChain].getTransactionReceipt({ hash: opts.hash })
@@ -95,7 +95,7 @@ export function usePublicNodeWaitForTransaction() {
         n: 10,
         minWait: 5000,
         maxWait: 10000,
-        delay: (chainId ? AVERAGE_CHAIN_BLOCK_TIMES[chainId] : BSC_BLOCK_TIME) * 1000 + 1000,
+        delay: (selectedChain ? AVERAGE_CHAIN_BLOCK_TIMES[selectedChain] : BSC_BLOCK_TIME) * 1000 + 1000,
       }).promise as Promise<TransactionReceipt>
     },
     [chainId, provider, refetchBlockData, w3WConfig],
